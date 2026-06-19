@@ -1,0 +1,9 @@
+services:
+  ubuntu:
+    image: ubuntu:24.04
+    container_name: ubuntu-terminal
+    hostname: ubuntu-terminal
+    stdin_open: true
+    tty: true
+    command: sleep infinity
+    restart: unless-stopped
