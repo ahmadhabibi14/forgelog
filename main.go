@@ -2,13 +2,31 @@ package main
 
 import (
 	"context"
+	"forgelog/configs"
+	"forgelog/internal/lib/logger"
 	"io"
 	"log"
 
 	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/moby/moby/client"
 )
+
+var (
+	dockerClient *client.Client
+)
+
+func init() {
+	cli, err := client.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+	dockerClient = cli
+
+	configs.LoadEnv()
+	logger.InitializeLogger()
+}
 
 func terminalHandler(conn *websocket.Conn) {
 	defer conn.Close()
@@ -17,16 +35,7 @@ func terminalHandler(conn *websocket.Conn) {
 
 	ctx := context.Background()
 
-	cli, err := client.New()
-	if err != nil {
-		_ = conn.WriteMessage(
-			websocket.TextMessage,
-			[]byte(err.Error()),
-		)
-		return
-	}
-
-	execResp, err := cli.ExecCreate(ctx, containerId, client.ExecCreateOptions{
+	execResp, err := dockerClient.ExecCreate(ctx, containerId, client.ExecCreateOptions{
 		AttachStdin:  true,
 		AttachStdout: true,
 		AttachStderr: true,
@@ -44,7 +53,7 @@ func terminalHandler(conn *websocket.Conn) {
 		return
 	}
 
-	attachResp, err := cli.ExecAttach(
+	attachResp, err := dockerClient.ExecAttach(
 		ctx,
 		execResp.ID,
 		client.ExecAttachOptions{
@@ -96,24 +105,38 @@ func terminalHandler(conn *websocket.Conn) {
 	}
 }
 
+func listContainersDocker(c fiber.Ctx) error {
+	c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSONCharsetUTF8)
+
+	containers, err := dockerClient.ContainerList(c.Context(), client.ContainerListOptions{
+		All: true,
+	})
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(containers)
+}
+
 func main() {
 	app := fiber.New()
 
-	app.Use("/ws", func(c fiber.Ctx) error {
-		// IsWebSocketUpgrade returns true if the client
-		// requested upgrade to the WebSocket protocol.
-		if websocket.IsWebSocketUpgrade(c) {
-			c.Locals("allowed", true)
-			return c.Next()
-		}
-		return fiber.ErrUpgradeRequired
-	})
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{
+			"GET", "POST", "PUT", "DELETE", "PATCH",
+		},
+		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization"},
+	}))
 
-	app.Get("/ws/:container_id", websocket.New(terminalHandler))
+	app.Post("/api/containers/docker", listContainersDocker)
+	app.Get("/api/containers/docker/terminal/:container_id", websocket.New(terminalHandler))
 
 	app.Get("/", func(c fiber.Ctx) error {
 		c.Set(fiber.HeaderContentType, fiber.MIMETextHTMLCharsetUTF8)
-		return c.SendFile("./views/index.html")
+		return c.SendFile("./frontend/index.html")
 	})
 
 	log.Fatal(app.Listen(":3000"))

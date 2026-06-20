@@ -1,11 +1,15 @@
-module termcont
+module forgelog
 
 go 1.25.7
 
 require (
+	github.com/fatih/color v1.19.0
 	github.com/gofiber/contrib/v3/websocket v1.2.0
 	github.com/gofiber/fiber/v3 v3.3.0
+	github.com/joho/godotenv v1.5.1
 	github.com/moby/moby/client v0.5.0
+	github.com/sirupsen/logrus v1.9.4
+	github.com/sutantodadang/go-rotate-logs v1.0.0
 )
 
 require (
@@ -24,7 +28,7 @@ require (
 	github.com/gofiber/utils/v2 v2.0.6 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.18.6 // indirect
-	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-colorable v0.1.15 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/moby/api v1.55.0 // indirect
@@ -42,6 +46,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	golang.org/x/crypto v0.52.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 )
