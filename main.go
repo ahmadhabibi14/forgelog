@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"forgelog/configs"
+	cronjob "forgelog/internal/cron"
+	"forgelog/internal/handler"
 	"forgelog/internal/lib/logger"
 	"io"
 	"log"
@@ -29,7 +31,10 @@ func init() {
 }
 
 func terminalHandler(conn *websocket.Conn) {
-	defer conn.Close()
+	defer func() {
+		conn.Close()
+		logger.Log.Info("Connection closed")
+	}()
 
 	containerId := conn.Params("container_id")
 
@@ -77,7 +82,7 @@ func terminalHandler(conn *websocket.Conn) {
 
 			if err != nil {
 				if err != io.EOF {
-					log.Println(err)
+					logger.Log.Error(err)
 				}
 				return
 			}
@@ -121,6 +126,8 @@ func listContainersDocker(c fiber.Ctx) error {
 }
 
 func main() {
+	go cronjob.CollectStats()
+
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{
@@ -131,8 +138,11 @@ func main() {
 		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization"},
 	}))
 
+	app.Get("/api/system/stats", handler.GetStats)
 	app.Post("/api/containers/docker", listContainersDocker)
 	app.Get("/api/containers/docker/terminal/:container_id", websocket.New(terminalHandler))
+	app.Post("/api/containers/docker/detail/:container_id", listContainersDocker)
+	app.Post("/api/containers/docker/config/:container_id", listContainersDocker)
 
 	app.Get("/", func(c fiber.Ctx) error {
 		c.Set(fiber.HeaderContentType, fiber.MIMETextHTMLCharsetUTF8)

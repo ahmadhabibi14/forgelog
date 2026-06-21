@@ -1,60 +1,108 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { currentPage, PathContainers } from "../../states/page";
-  import { Terminal } from '@xterm/xterm';
-  import { WebLinksAddon } from '@xterm/addon-web-links';
-  import "@xterm/xterm/css/xterm.css";
-  import { FitAddon } from "@xterm/addon-fit";
+	import { onMount } from 'svelte';
+	import { currentPage, PathContainers } from '../../states/page';
+	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
+	import { House } from '@lucide/svelte';
+	import Terminal from './tabs/Terminal.svelte';
+	import Detail from './tabs/Detail.svelte';
+	import { getLastPath } from '$lib/helper';
 
+	let containerId: string = getLastPath();
 
-  export let params: {
-    id: string;
-  };
-  
-  onMount(() => {
-    currentPage.set(PathContainers);
-  });
+	onMount(() => {
+		currentPage.set(PathContainers);
+	});
 
-  
+	
+	let tabSelected: {
+		name: string;
+		component: any;
+		props: Object
+	} = $state({
+		name: 'detail',
+		component: Detail,
+		props: {
+			containerId: containerId
+		}
+	});
 
-let terminalElement: HTMLElement;
+	function showDetail() {
+		tabSelected = {
+		name: 'detail',
+		component: Detail,
+		props: {
+			containerId: containerId
+		}
+	};
+	}
 
-onMount(() => {
-  
-const term = new Terminal({
-  cursorBlink: true,
-});
-
-const fitAddon = new FitAddon()
-term.loadAddon(fitAddon);
-term.loadAddon(new WebLinksAddon());
-
-term.open(terminalElement);
-
-const ws = new WebSocket("ws://localhost:3000/api/containers/docker/terminal/" + params.id);
-
-      ws.onmessage = (e) => {
-        term.write(e.data);
-      };
-
-      term.onData((data) => {
-        ws.send(data);
-      });
-
-       const resizeObserver = new ResizeObserver(() => {
-    fitAddon.fit();
-  });
-
-  resizeObserver.observe(terminalElement);
-
-  return () => {
-    resizeObserver.disconnect();
-    ws.close();
-    term.dispose();
-  };
-})
+	function showTerminal() {
+		tabSelected = {
+		name: 'terminal',
+		component: Terminal,
+		props: {
+			containerId: containerId
+		}
+	};
+	}
 </script>
 
-<div class="w-full h-full overflow-hidden p-2 bg-black rounded-md">
-  <div class="w-full h-full" bind:this={terminalElement}></div>
+<div class="flex flex-col h-full min-h-0 gap-3">
+	<Breadcrumb.Root class="text-sm! py-2 pl-2">
+		<Breadcrumb.List>
+			<Breadcrumb.Item>
+				<Breadcrumb.Link href="#/" class="flex flex-row gap-2 items-center">
+					<House size="16" />
+					<span>Dashboard</span>
+				</Breadcrumb.Link>
+			</Breadcrumb.Item>
+			<Breadcrumb.Separator />
+			<Breadcrumb.Item>
+				<Breadcrumb.Link href="#/containers">Containers</Breadcrumb.Link>
+			</Breadcrumb.Item>
+			<Breadcrumb.Separator />
+			<Breadcrumb.Item>
+				<Breadcrumb.Link href="#/containers">Docker</Breadcrumb.Link>
+			</Breadcrumb.Item>
+			<Breadcrumb.Separator />
+			<Breadcrumb.Item>
+				<Breadcrumb.Page>{containerId.slice(0,12)}</Breadcrumb.Page>
+			</Breadcrumb.Item>
+		</Breadcrumb.List>
+	</Breadcrumb.Root>
+	<div class="flex flex-row text-sm">
+		<button class="{tabSelected.name === 'detail'
+			? 'bg-neutral-800 border-forgelog text-forgelog'
+			: 'border-neutral-700'
+		} border-b-2  py-2 px-10 cursor-pointer hover:bg-neutral-700/60"
+		onclick={showDetail}>Detail</button>
+		
+		<button class="{tabSelected.name === 'network'
+			? 'bg-neutral-800 border-forgelog text-forgelog'
+			: 'border-neutral-700'
+		} border-b-2  py-2 px-10 cursor-pointer hover:bg-neutral-700/60"
+		onclick={() => console.log('network')}>Network</button>
+		
+		<button class="{tabSelected.name === 'environment'
+			? 'bg-neutral-800 border-forgelog text-forgelog'
+			: 'border-neutral-700'
+		} border-b-2  py-2 px-10 cursor-pointer hover:bg-neutral-700/60"
+		onclick={() => console.log('environment')}>Environment</button>
+		
+		<button class="{tabSelected.name === 'config'
+			? 'bg-neutral-800 border-forgelog text-forgelog'
+			: 'border-neutral-700'
+		} border-b-2  py-2 px-10 cursor-pointer hover:bg-neutral-700/60"
+		onclick={() => console.log('config')}>Config</button>
+
+		<button class="{tabSelected.name === 'terminal'
+			? 'bg-neutral-800 border-forgelog text-forgelog'
+			: 'border-neutral-700'
+		} border-b-2  py-2 px-10 cursor-pointer hover:bg-neutral-700/60"
+		onclick={showTerminal}>Terminal</button>
+	</div>
+
+	<div class="flex-1 min-h-0">
+	<tabSelected.component {...tabSelected.props} />
+	</div>
 </div>
