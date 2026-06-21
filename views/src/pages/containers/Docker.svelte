@@ -6,6 +6,7 @@
 	import Terminal from './tabs/Terminal.svelte';
 	import Detail from './tabs/Detail.svelte';
 	import { getLastPath } from '$lib/helper';
+	import Network from './tabs/Network.svelte';
 
 	let containerId: string = getLastPath();
 
@@ -30,6 +31,16 @@
 		tabSelected = {
 		name: 'detail',
 		component: Detail,
+		props: {
+			containerId: containerId
+		}
+	};
+	}
+
+	function showNetwork() {
+		tabSelected = {
+		name: 'network',
+		component: Network,
 		props: {
 			containerId: containerId
 		}
@@ -70,7 +81,9 @@
 			</Breadcrumb.Item>
 		</Breadcrumb.List>
 	</Breadcrumb.Root>
-	<div class="flex flex-row text-sm">
+	<div class="flex text-sm relative z-10">
+		<span class="h-0.5 bg-neutral-700 z-9 w-full absolute bottom-0"></span>
+		<div class="flex-row flex relative z-10">
 		<button class="{tabSelected.name === 'detail'
 			? 'bg-neutral-800 border-forgelog text-forgelog'
 			: 'border-neutral-700'
@@ -81,7 +94,7 @@
 			? 'bg-neutral-800 border-forgelog text-forgelog'
 			: 'border-neutral-700'
 		} border-b-2  py-2 px-10 cursor-pointer hover:bg-neutral-700/60"
-		onclick={() => console.log('network')}>Network</button>
+		onclick={showNetwork}>Network</button>
 		
 		<button class="{tabSelected.name === 'environment'
 			? 'bg-neutral-800 border-forgelog text-forgelog'
@@ -100,6 +113,7 @@
 			: 'border-neutral-700'
 		} border-b-2  py-2 px-10 cursor-pointer hover:bg-neutral-700/60"
 		onclick={showTerminal}>Terminal</button>
+		</div>
 	</div>
 
 	<div class="flex-1 min-h-0">

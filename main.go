@@ -8,7 +8,10 @@ import (
 	"forgelog/internal/lib/logger"
 	"io"
 	"log"
+	"os"
+	"os/exec"
 
+	"github.com/creack/pty"
 	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
@@ -30,7 +33,61 @@ func init() {
 	logger.InitializeLogger()
 }
 
-func terminalHandler(conn *websocket.Conn) {
+func terminalHandler(c *websocket.Conn) {
+	var shell string
+
+	if _, err := os.Stat("/bin/bash"); err == nil {
+		shell = "/bin/bash"
+	} else {
+		shell = "/bin/sh"
+	}
+
+	cmd := exec.Command(shell)
+
+	ptmx, err := pty.Start(cmd)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer func() {
+		_ = ptmx.Close()
+		_ = cmd.Process.Kill()
+	}()
+
+	// PTY -> WebSocket
+	go func() {
+		buf := make([]byte, 4096)
+
+		for {
+			n, err := ptmx.Read(buf)
+			if err != nil {
+				if err != io.EOF {
+					log.Println(err)
+				}
+				_ = c.Close()
+				return
+			}
+
+			if err := c.WriteMessage(websocket.TextMessage, buf[:n]); err != nil {
+				return
+			}
+		}
+	}()
+
+	// WebSocket -> PTY
+	for {
+		_, msg, err := c.ReadMessage()
+		if err != nil {
+			break
+		}
+
+		if _, err := ptmx.Write(msg); err != nil {
+			break
+		}
+	}
+}
+
+func dockerTerminal(conn *websocket.Conn) {
 	defer func() {
 		conn.Close()
 		logger.Log.Info("Connection closed")
@@ -125,6 +182,20 @@ func listContainersDocker(c fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(containers)
 }
 
+func getContainerDetail(c fiber.Ctx) error {
+	containerId := c.Params("container_id")
+
+	res, err := dockerClient.ContainerInspect(context.Background(), containerId, client.ContainerInspectOptions{
+		Size: true,
+	})
+	if err != nil {
+		logger.Log.Error(err, "failed to get container info")
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(res)
+}
+
 func main() {
 	go cronjob.CollectStats()
 
@@ -139,14 +210,16 @@ func main() {
 	}))
 
 	app.Get("/api/system/stats", handler.GetStats)
+	app.Get("/api/system/terminal", websocket.New(terminalHandler))
 	app.Post("/api/containers/docker", listContainersDocker)
-	app.Get("/api/containers/docker/terminal/:container_id", websocket.New(terminalHandler))
-	app.Post("/api/containers/docker/detail/:container_id", listContainersDocker)
-	app.Post("/api/containers/docker/config/:container_id", listContainersDocker)
+	app.Get("/api/containers/docker/terminal/:container_id", websocket.New(dockerTerminal))
+	app.Get("/api/containers/docker/detail/:container_id", getContainerDetail)
+	app.Post("/api/containers/docker/detail/:container_id", getContainerDetail)
+	app.Post("/api/containers/docker/config/:container_id", getContainerDetail)
 
-	app.Get("/", func(c fiber.Ctx) error {
-		c.Set(fiber.HeaderContentType, fiber.MIMETextHTMLCharsetUTF8)
-		return c.SendFile("./frontend/index.html")
+	app.Get("/healthz", func(c fiber.Ctx) error {
+		c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)
+		return c.Status(fiber.StatusOK).SendString("ok")
 	})
 
 	log.Fatal(app.Listen(":3000"))

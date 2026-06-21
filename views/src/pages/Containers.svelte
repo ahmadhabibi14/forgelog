@@ -5,7 +5,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import { formatUnixTimestamp } from '$lib/formatter';
 	import { currentPage, PathContainers } from '../states/page';
-	import { Funnel, Search } from '@lucide/svelte';
+	import { Funnel, Plus, Search } from '@lucide/svelte';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 
@@ -43,6 +43,7 @@
 </script>
 
 <div class="flex flex-col gap-2">
+	<div class="flex flex-row justify-between items-center">
 	<div class="flex flex-row gap-3 items-center p-2">
 		<button>
 			<Funnel size="16" />
@@ -63,7 +64,15 @@
 			</Select.Content>
 		</Select.Root>
 
-		<Input type="text" placeholder="Search..." class="max-w-xs" />
+		<Input type="text" placeholder="Search..." class="max-w-3xl w-100" />
+	</div>
+	<div>
+		<button class="bg-forgelog hover:bg-forgelog-light text-neutral-950 py-1.5 px-3 rounded-md
+		flex flex-row gap-2 items-center text-sm cursor-pointer">
+			<Plus size="17" />
+			<span>Add New</span>
+		</button>
+	</div>
 	</div>
 	<Table.Root>
 		<Table.Header>

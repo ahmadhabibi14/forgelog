@@ -155,3 +155,23 @@
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.439 0 0);
 }
+
+@layer utilities {
+  /* scrollbar track */
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-track {
+		@apply bg-neutral-900 rounded-md;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    @apply bg-forgelog rounded-md;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    @apply bg-forgelog-light;
+  }
+}

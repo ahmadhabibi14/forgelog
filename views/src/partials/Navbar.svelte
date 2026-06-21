@@ -12,7 +12,6 @@
   const es = new EventSource("http://localhost:3000/api/system/stats");
 	es.addEventListener("stats", (e) => {
 		const data = JSON.parse(e.data) || {};
-		console.log(data);
     systemStats = data;
 	});
 </script>
