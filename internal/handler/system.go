@@ -6,8 +6,13 @@ import (
 	"fmt"
 	"forgelog/internal/lib/logger"
 	"forgelog/internal/state"
+	"io"
+	"os"
+	"os/exec"
 	"time"
 
+	"github.com/creack/pty"
+	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -25,7 +30,7 @@ func GetStats(c fiber.Ctx) error {
 	c.Set("X-Accel-Buffering", "no")
 
 	c.SendStreamWriter(func(w *bufio.Writer) {
-		ticker := time.NewTicker(time.Second)
+		ticker := time.NewTicker(2 * time.Second)
 		defer ticker.Stop()
 
 		for {
@@ -60,6 +65,65 @@ func GetStats(c fiber.Ctx) error {
 	})
 
 	return nil
+}
+
+func TerminalHandler(c *websocket.Conn) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		logger.Log.Error(err)
+		return
+	}
+
+	var shell string = "/bin/sh"
+	if _, err := os.Stat("/bin/bash"); err == nil {
+		shell = "/bin/bash"
+	}
+
+	cmd := exec.Command(shell)
+	cmd.Dir = homeDir
+
+	ptmx, err := pty.Start(cmd)
+	if err != nil {
+		logger.Log.Error(err)
+		return
+	}
+
+	defer func() {
+		ptmx.Close()
+		cmd.Process.Kill()
+	}()
+
+	// PTY -> WebSocket
+	go func() {
+		buf := make([]byte, 4096)
+
+		for {
+			n, err := ptmx.Read(buf)
+			if err != nil {
+				if err != io.EOF {
+					logger.Log.Error(err)
+				}
+				_ = c.Close()
+				return
+			}
+
+			if err := c.WriteMessage(websocket.TextMessage, buf[:n]); err != nil {
+				return
+			}
+		}
+	}()
+
+	// WebSocket -> PTY
+	for {
+		_, msg, err := c.ReadMessage()
+		if err != nil {
+			break
+		}
+
+		if _, err := ptmx.Write(msg); err != nil {
+			break
+		}
+	}
 }
 
 func humanizeBytes(b uint64) string {

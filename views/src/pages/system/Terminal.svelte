@@ -6,10 +6,6 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { Maximize, Minimize } from '@lucide/svelte';
 
-	let props: {
-		containerId: string;
-	} = $props();
-
 	let terminalElement: HTMLElement;
   let containerElement: HTMLElement;
 
@@ -21,7 +17,7 @@
   let isConnected = $state(false);
 
 	function wsConnector(): WebSocket {
-		return new WebSocket('ws://localhost:3000/api/containers/docker/terminal/' + props.containerId);
+		return new WebSocket('ws://localhost:3000/api/system/terminal');
 	}
 
   function reconnect() {

@@ -8,10 +8,7 @@ import (
 	"forgelog/internal/lib/logger"
 	"io"
 	"log"
-	"os"
-	"os/exec"
 
-	"github.com/creack/pty"
 	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
@@ -33,68 +30,12 @@ func init() {
 	logger.InitializeLogger()
 }
 
-func terminalHandler(c *websocket.Conn) {
-	var shell string
-
-	if _, err := os.Stat("/bin/bash"); err == nil {
-		shell = "/bin/bash"
-	} else {
-		shell = "/bin/sh"
-	}
-
-	cmd := exec.Command(shell)
-
-	ptmx, err := pty.Start(cmd)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer func() {
-		_ = ptmx.Close()
-		_ = cmd.Process.Kill()
-	}()
-
-	// PTY -> WebSocket
-	go func() {
-		buf := make([]byte, 4096)
-
-		for {
-			n, err := ptmx.Read(buf)
-			if err != nil {
-				if err != io.EOF {
-					log.Println(err)
-				}
-				_ = c.Close()
-				return
-			}
-
-			if err := c.WriteMessage(websocket.TextMessage, buf[:n]); err != nil {
-				return
-			}
-		}
-	}()
-
-	// WebSocket -> PTY
-	for {
-		_, msg, err := c.ReadMessage()
-		if err != nil {
-			break
-		}
-
-		if _, err := ptmx.Write(msg); err != nil {
-			break
-		}
-	}
-}
-
 func dockerTerminal(conn *websocket.Conn) {
 	defer func() {
 		conn.Close()
 		logger.Log.Info("Connection closed")
 	}()
-
 	containerId := conn.Params("container_id")
-
 	ctx := context.Background()
 
 	execResp, err := dockerClient.ExecCreate(ctx, containerId, client.ExecCreateOptions{
@@ -108,10 +49,7 @@ func dockerTerminal(conn *websocket.Conn) {
 	})
 
 	if err != nil {
-		conn.WriteMessage(
-			websocket.TextMessage,
-			[]byte(err.Error()),
-		)
+		conn.WriteMessage(websocket.TextMessage, []byte(err.Error()))
 		return
 	}
 
@@ -200,7 +138,6 @@ func main() {
 	go cronjob.CollectStats()
 
 	app := fiber.New()
-
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{
@@ -210,7 +147,7 @@ func main() {
 	}))
 
 	app.Get("/api/system/stats", handler.GetStats)
-	app.Get("/api/system/terminal", websocket.New(terminalHandler))
+	app.Get("/api/system/terminal", websocket.New(handler.TerminalHandler))
 	app.Post("/api/containers/docker", listContainersDocker)
 	app.Get("/api/containers/docker/terminal/:container_id", websocket.New(dockerTerminal))
 	app.Get("/api/containers/docker/detail/:container_id", getContainerDetail)

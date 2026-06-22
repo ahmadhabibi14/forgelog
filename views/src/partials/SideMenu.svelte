@@ -6,7 +6,10 @@
 		FileClock,
 		type LucideProps,
 		Settings,
-		GlobeLock
+		GlobeLock,
+
+		MonitorCog
+
 	} from '@lucide/svelte';
 	import type { Component } from 'svelte';
 	import { currentPage } from '../states/page';
@@ -42,6 +45,11 @@
 			label: 'Networks'
 		},
 		{
+			path: '#/system',
+			icon: MonitorCog,
+			label: 'System'
+		},
+		{
 			path: '#/settings',
 			icon: Settings,
 			label: 'Settings'
@@ -53,6 +61,7 @@
 	{#each navmenu as nav (nav.path)}
 		<a
 			href={nav.path}
+			onclick={() => ($currentPage = nav.path)}
 			class="flex flex-row gap-3 items-center py-2 px-2 hover:bg-neutral-900
       rounded-md active:ring-0 focus:ring-0 focus:border-none active:border-none
         focus:bg-neutral-900 focus:outline-0

@@ -5,12 +5,14 @@
 	import SideMenu from './partials/SideMenu.svelte';
 	import ContainerDetailDocker from './pages/containers/Docker.svelte';
 	import Navbar from './partials/Navbar.svelte';
+	import System from './pages/System.svelte';
 
 
 	const routes: RouteDefinition = {
 		'/': Dashboard,
 		'/containers': Containers,
-		'/containers/docker/:id': ContainerDetailDocker as any
+		'/containers/docker/:id': ContainerDetailDocker as any,
+		'/system': System
 	};
 </script>
 
