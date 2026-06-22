@@ -57,7 +57,7 @@
 	];
 </script>
 
-<aside class="w-3xs h-full p-4 flex flex-col gap-1">
+<aside class="w-3xs h-full py-4 pl-4 pr-0 flex flex-col gap-1">
 	{#each navmenu as nav (nav.path)}
 		<a
 			href={nav.path}
