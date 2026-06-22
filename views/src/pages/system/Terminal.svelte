@@ -5,6 +5,7 @@
 	import { FitAddon } from '@xterm/addon-fit';
 	import { onDestroy, onMount } from 'svelte';
 	import { Maximize, Minimize } from '@lucide/svelte';
+	import { websocketConnector } from '$lib/helper';
 
 	let terminalElement: HTMLElement;
   let containerElement: HTMLElement;
@@ -16,16 +17,12 @@
   let isFullscreen = $state(false);
   let isConnected = $state(false);
 
-	function wsConnector(): WebSocket {
-		return new WebSocket('ws://localhost:3000/api/system/terminal');
-	}
-
   function reconnect() {
     term.clear();
     term.clearSelection();
     term.reset();
 
-    ws = wsConnector();
+    ws = websocketConnector('/api/system/terminal');
     ws.onmessage = (e) => term.write(e.data);
     ws.onclose = () => isConnected = false;
     ws.onerror = (ev) => {
@@ -58,7 +55,7 @@
     fitAddon.fit();
 
 		// Open WebSocket connection
-		ws = wsConnector();
+		ws = websocketConnector('/api/system/terminal');
     isConnected = true;
 
 		ws.onmessage = (e) => term.write(e.data);

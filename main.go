@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
+	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/moby/moby/client"
 )
 
@@ -153,6 +154,12 @@ func main() {
 	app.Get("/api/containers/docker/detail/:container_id", getContainerDetail)
 	app.Post("/api/containers/docker/detail/:container_id", getContainerDetail)
 	app.Post("/api/containers/docker/config/:container_id", getContainerDetail)
+
+	app.Get("/*", static.New("./views/dist"))
+	app.Get("/", func(c fiber.Ctx) error {
+		c.Set(fiber.HeaderContentType, fiber.MIMETextHTMLCharsetUTF8)
+		return c.Status(fiber.StatusOK).SendFile("./views/dist/index.html")
+	})
 
 	app.Get("/healthz", func(c fiber.Ctx) error {
 		c.Set(fiber.HeaderContentType, fiber.MIMETextPlainCharsetUTF8)

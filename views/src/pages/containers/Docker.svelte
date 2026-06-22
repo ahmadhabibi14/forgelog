@@ -56,6 +56,33 @@
 		}
 	};
 	}
+
+	const tabsMenu: {
+		name: string;
+		label: string;
+		func: () => void;
+	}[] = [
+		{
+			name: 'detail',
+			label: 'Detail',
+			func: showDetail
+		},
+		{
+			name: 'network',
+			label: 'Network',
+			func: showNetwork
+		},
+		{
+			name: 'config',
+			label: 'Config',
+			func: () => console.log('config')
+		},
+		{
+			name: 'terminal',
+			label: 'Terminal',
+			func: showTerminal
+		},
+	]
 </script>
 
 <div class="flex flex-col h-full min-h-0 gap-3">
@@ -84,35 +111,17 @@
 	<div class="flex text-sm relative z-10">
 		<span class="h-0.5 bg-neutral-700 z-9 w-full absolute bottom-0"></span>
 		<div class="flex-row flex relative z-10">
-		<button class="{tabSelected.name === 'detail'
-			? 'bg-neutral-800 border-forgelog text-forgelog'
-			: 'border-neutral-700'
-		} border-b-2  py-2 px-10 cursor-pointer hover:bg-neutral-700/60"
-		onclick={showDetail}>Detail</button>
-		
-		<button class="{tabSelected.name === 'network'
-			? 'bg-neutral-800 border-forgelog text-forgelog'
-			: 'border-neutral-700'
-		} border-b-2  py-2 px-10 cursor-pointer hover:bg-neutral-700/60"
-		onclick={showNetwork}>Network</button>
-		
-		<button class="{tabSelected.name === 'environment'
-			? 'bg-neutral-800 border-forgelog text-forgelog'
-			: 'border-neutral-700'
-		} border-b-2  py-2 px-10 cursor-pointer hover:bg-neutral-700/60"
-		onclick={() => console.log('environment')}>Environment</button>
-		
-		<button class="{tabSelected.name === 'config'
-			? 'bg-neutral-800 border-forgelog text-forgelog'
-			: 'border-neutral-700'
-		} border-b-2  py-2 px-10 cursor-pointer hover:bg-neutral-700/60"
-		onclick={() => console.log('config')}>Config</button>
-
-		<button class="{tabSelected.name === 'terminal'
-			? 'bg-neutral-800 border-forgelog text-forgelog'
-			: 'border-neutral-700'
-		} border-b-2  py-2 px-10 cursor-pointer hover:bg-neutral-700/60"
-		onclick={showTerminal}>Terminal</button>
+		{#each tabsMenu as tab (tab.name)}
+			<button class="{tabSelected.name === tab.name
+				? 'border-forgelog text-forgelog'
+				: 'border-neutral-700 hover:bg-neutral-700/60'
+			} border-b-2  py-2 px-6 cursor-pointer 
+			flex items-center justify-center"
+			onclick={tab.func}>
+				<span class="{tabSelected.name === tab.name ? 'bg-neutral-800' : ''}
+				w-fit h-fit py-1 px-4 rounded-md">{tab.label}</span>
+			</button>
+		{/each}
 		</div>
 	</div>
 

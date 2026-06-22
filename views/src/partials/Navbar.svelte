@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { ArrowUpDown, Cpu, HardDrive, MemoryStick, TextAlignJustify } from '@lucide/svelte';
 	import type { SystemStat } from '../types/stats';
+	import { onMount } from 'svelte';
+
+  onMount(() => {
+    console.log('HOST:', window.location.host)
+    console.log('ENV', import.meta.env);
+  })
 
   let systemStats: SystemStat = $state({
     bandwidth: '',
@@ -9,7 +15,7 @@
     memory: ''
   });
 
-  const es = new EventSource("http://localhost:3000/api/system/stats");
+  const es = new EventSource(`${import.meta.env.VITE_API_BASE_URL}/api/system/stats`);
 	es.addEventListener("stats", (e) => {
 		const data = JSON.parse(e.data) || {};
     systemStats = data;
