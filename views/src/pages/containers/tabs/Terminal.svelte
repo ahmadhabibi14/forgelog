@@ -26,7 +26,7 @@
 		term.clearSelection();
 		term.reset();
 
-		ws = websocketConnector('/api/containers/docker/terminal/' + props.containerId);
+		ws = websocketConnector(`/api/container/${props.containerId}/terminal`);
 		ws.onmessage = (e) => term.write(e.data);
 		ws.onclose = () => (isConnected = false);
 		ws.onerror = (ev) => {
@@ -59,7 +59,7 @@
 		fitAddon.fit();
 
 		// Open WebSocket connection
-		ws = websocketConnector('/api/containers/docker/terminal/' + props.containerId);
+		ws = websocketConnector(`/api/container/${props.containerId}/terminal`);
 		isConnected = true;
 
 		ws.onmessage = (e) => term.write(e.data);

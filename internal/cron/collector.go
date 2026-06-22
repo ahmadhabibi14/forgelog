@@ -1,7 +1,9 @@
 package cronjob
 
 import (
+	"context"
 	"fmt"
+	"forgelog/internal/lib/logger"
 	"forgelog/internal/state"
 	"time"
 
@@ -11,55 +13,63 @@ import (
 	psnet "github.com/shirou/gopsutil/v4/net"
 )
 
-func CollectStats() {
-	var prevBytes uint64
+func CollectStats(ctx context.Context) {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
 
+	var prevBytes uint64
 	netStats, _ := psnet.IOCounters(false)
 	if len(netStats) > 0 {
 		prevBytes = netStats[0].BytesRecv + netStats[0].BytesSent
 	}
 
 	for {
-		vm, _ := mem.VirtualMemory()
-		du, _ := disk.Usage("/")
+		select {
+		case <-ctx.Done():
+			fmt.Println("CollectStats stopped")
+			logger.Log.Info("collect system stats stopped")
+			return
+		case <-ticker.C:
 
-		cpuPercent, _ := cpu.Percent(0, false)
+			vm, _ := mem.VirtualMemory()
+			du, _ := disk.Usage("/")
 
-		netStats, _ := psnet.IOCounters(false)
+			cpuPercent, _ := cpu.Percent(0, false)
 
-		var bandwidth uint64
+			netStats, _ := psnet.IOCounters(false)
 
-		if len(netStats) > 0 {
-			currentBytes := netStats[0].BytesRecv + netStats[0].BytesSent
+			var bandwidth uint64
 
-			if currentBytes >= prevBytes {
-				bandwidth = currentBytes - prevBytes
+			if len(netStats) > 0 {
+				currentBytes := netStats[0].BytesRecv + netStats[0].BytesSent
+
+				if currentBytes >= prevBytes {
+					bandwidth = currentBytes - prevBytes
+				}
+
+				prevBytes = currentBytes
 			}
 
-			prevBytes = currentBytes
+			state.SystemStats.Mu.Lock()
+			state.SystemStats.Stat = state.Stats{
+				Memory: fmt.Sprintf(
+					"%s/%s",
+					humanizeBytes(vm.Used),
+					humanizeBytes(vm.Total),
+				),
+				Disk: fmt.Sprintf(
+					"%s/%s",
+					humanizeBytes(du.Used),
+					humanizeBytes(du.Total),
+				),
+				CPU: fmt.Sprintf("%.0f%%", cpuPercent[0]),
+				Bandwidth: fmt.Sprintf(
+					"%s/s",
+					humanizeBytes(bandwidth),
+				),
+			}
+			state.SystemStats.Mu.Unlock()
 		}
-
-		state.SystemStats.Mu.Lock()
-		state.SystemStats.Stat = state.Stats{
-			Memory: fmt.Sprintf(
-				"%s/%s",
-				humanizeBytes(vm.Used),
-				humanizeBytes(vm.Total),
-			),
-			Disk: fmt.Sprintf(
-				"%s/%s",
-				humanizeBytes(du.Used),
-				humanizeBytes(du.Total),
-			),
-			CPU: fmt.Sprintf("%.0f%%", cpuPercent[0]),
-			Bandwidth: fmt.Sprintf(
-				"%s/s",
-				humanizeBytes(bandwidth),
-			),
-		}
-		state.SystemStats.Mu.Unlock()
-
-		time.Sleep(2 * time.Second)
 	}
 }
 

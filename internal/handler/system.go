@@ -16,14 +16,16 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-type StatsResponse struct {
-	Memory    string `json:"memory"`
-	Disk      string `json:"disk"`
-	CPU       string `json:"cpu"`
-	Bandwidth string `json:"bandwidth"`
+type handlerSystem struct{}
+
+func NewHandlerSystem(app *fiber.App) {
+	h := &handlerSystem{}
+
+	app.Get("/api/system/stats", h.GetStats)
+	app.Get("/api/system/terminal", websocket.New(h.TerminalHandler))
 }
 
-func GetStats(c fiber.Ctx) error {
+func (h *handlerSystem) GetStats(c fiber.Ctx) error {
 	c.Set("Content-Type", "text/event-stream")
 	c.Set("Cache-Control", "no-cache")
 	c.Set("Connection", "keep-alive")
@@ -67,7 +69,7 @@ func GetStats(c fiber.Ctx) error {
 	return nil
 }
 
-func TerminalHandler(c *websocket.Conn) {
+func (h *handlerSystem) TerminalHandler(c *websocket.Conn) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		logger.Log.Error(err)

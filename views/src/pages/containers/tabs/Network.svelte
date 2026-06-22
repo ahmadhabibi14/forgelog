@@ -15,7 +15,7 @@
   onMount(async () => {
     try {
     const { data } = await axios.get(
-      `/api/containers/docker/detail/${params.containerId}`
+      `/api/container/${params.containerId}`
     );
 
     containerDetail = data;

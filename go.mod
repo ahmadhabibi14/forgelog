@@ -3,6 +3,7 @@ module forgelog
 go 1.25.7
 
 require (
+	github.com/creack/pty v1.1.24
 	github.com/fatih/color v1.19.0
 	github.com/gofiber/contrib/v3/websocket v1.2.0
 	github.com/gofiber/fiber/v3 v3.3.0
@@ -11,6 +12,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.26.5
 	github.com/sirupsen/logrus v1.9.4
 	github.com/sutantodadang/go-rotate-logs v1.0.0
+	golang.org/x/sync v0.21.0
 )
 
 require (
@@ -18,7 +20,6 @@ require (
 	github.com/andybalholm/brotli v1.2.1 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
-	github.com/creack/pty v1.1.24 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/go-connections v0.7.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect

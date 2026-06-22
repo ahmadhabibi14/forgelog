@@ -11,7 +11,7 @@
 	const routes: RouteDefinition = {
 		'/': Dashboard,
 		'/containers': Containers,
-		'/containers/docker/:id': ContainerDetailDocker as any,
+		'/containers/:id': ContainerDetailDocker as any,
 		'/system': System
 	};
 </script>
